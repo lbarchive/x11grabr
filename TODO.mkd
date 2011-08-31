@@ -9,7 +9,6 @@ Issues
 Basic
 -----
 
- * Make building standalone, don't link against libav/ffmpeg.
  * Options parsing.
  * Benchmarking - allows to use options for testing output FPS.
 
