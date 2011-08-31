@@ -1,0 +1,61 @@
+TODO
+====
+
+Issues
+------
+
+ * Audio could be out of sync.
+
+Basic
+-----
+
+ * Make building standalone, don't link against libav/ffmpeg.
+ * Options parsing.
+ * Benchmarking - allows to use options for testing output FPS.
+
+Options
+-------
+
+ * show_region border style and color.
+ * no output pixel data. Just discard image data from X.
+ * Pointer highlighter (off-screen rendering like mouse pointer drawing):
+   * Following - A simple circle below the pointer.
+   * Clicks - Change colors to indicate mouse clicks.
+     * Could indicate using region border, changing color maybe.
+   * Modifier - Allows to render modifier in text.
+     * Could indicate using region border, changing color maybe.
+
+Commands
+--------
+
+There will be no keybindings in x11grabr, a FIFO will be used to accept
+commands and to return results. This potentially can be used with frontend, if
+someone prefers GUI.
+
+ * Add FIFO for commands input and results output.
+ * Zooming out to full-screen.
+ * Flexible zooming.
+
+Possibilities
+-------------
+
+ * Changing output pix format - libav/ffmpeg has flexible input format, you can
+   pretty much feed it any kind of format. This would only be implemented if
+   there is such program requires different out pix format.
+ * Extensions:
+   * Pre-grabbing - allows to modify what will be used to grab the screen.
+   * Post-grabbing - extensions will be supplied with image data and they can
+     do whatever they need to.
+   * Once this is implemented, draw_mouse can be moved to post-grabbing.
+     follow_mouse and show_region can be moved to pre-grabbing. Users can use
+     different extensions if they don't like the defaults.
+ * allows to spawn libav/ffmpeg, so only type in one command
+   * eg. ./x11grab -s hd720 -r 25 -- ~/test.mp4
+
+Wish list
+---------
+
+Not gonna happen if no one submits patches.
+
+ * Windows
+ * Mac

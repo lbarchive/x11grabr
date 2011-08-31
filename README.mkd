@@ -1,0 +1,27 @@
+x11grabr
+========
+
+This is an extended work after I submitted two patchs to [libav][] for mouse following and grabbing region indicator. I believe that any further development is better off libav, and it would be better to be a standalone program.
+
+[libav]: http://libav.org/
+
+Current Status
+--------------
+
+In this very first stage, x11grabr tries to do the same as it is in libav.
+
+Currently, x11grabr requires libav/ffmpeg to build, make sure their header files is in search path. Simply run `make` should do the trick, then you should be able to run a comannd as follows:
+
+    ./x11grabr | ffmpeg -f rawvideo -pix_fmt bgra -s hd720 -r 25 -i - test.mp4
+
+The video size and frame rate are fixed in code, there will be options once I make it not require libav/ffmpeg.
+
+Development
+-----------
+
+If you are interested in this, be sure you check out `TODO.mkd` in source files, so you know what I have in mind.
+
+License
+-------
+
+GPLv2, because `x11grab.c` is licensed under it.

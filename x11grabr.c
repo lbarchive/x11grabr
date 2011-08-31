@@ -1,7 +1,8 @@
 /*
- * X11 video grab interface
+ * X11 video GRABbeR
+ * Copyright (C) 2011 Yu-Jie Lin <livibetter@gmail.com>
  *
- * This file is part of Libav.
+ * This file was part of Libav as libavdevice/x11grab.c
  *
  * Libav integration:
  * Copyright (C) 2006 Clemens Fruhwirth <clemens@endorphin.org>
@@ -14,19 +15,19 @@
  * Copyright (C) 1997-1998 Rasca, Berlin
  *               2003-2004 Karl H. Beckers, Frankfurt
  *
- * Libav is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or
- * (at your option) any later version.
- *
- * Libav is distributed in the hope that it will be useful,
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * 
  * You should have received a copy of the GNU General Public License
- * along with Libav; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 /**
@@ -35,11 +36,11 @@
  * and Edouard Gomez <ed.gomez@free.fr>.
  */
 
-#include "config.h"
+/*#include "config.h"*/
 #include "libavformat/avformat.h"
-#include "libavutil/log.h"
+/*#include "libavutil/log.h"*/
 #include "libavutil/opt.h"
-#include "libavutil/parseutils.h"
+/*#include "libavutil/parseutils.h"*/
 #include <time.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -598,6 +599,7 @@ static const AVClass x11_class = {
 };
 
 /** x11 grabber device demuxer declaration */
+/*
 AVInputFormat ff_x11_grab_device_demuxer =
 {
     "x11grab",
@@ -610,3 +612,42 @@ AVInputFormat ff_x11_grab_device_demuxer =
     .flags = AVFMT_NOFILE,
     .priv_class = &x11_class,
 };
+*/
+int
+main(int argc, char **argv) {
+    AVFormatContext ctx;
+    AVFormatParameters params;
+    AVPacket pkt;
+    struct x11_grab x11grab;
+
+    ctx.av_class = &x11_class;
+    strcpy(ctx.filename, ":0.0");
+    ctx.nb_streams = 0;
+
+    x11grab.class = &x11_class;
+    x11grab.video_size = av_strdup("hd720");
+    x11grab.framerate  = av_strdup("25");
+    x11grab.follow_mouse = -1;
+    x11grab.show_region = 1;
+    x11grab.region_win = 0; 
+    ctx.priv_data = &x11grab;
+
+    x11grab_read_header(&ctx, &params);
+/*
+    printf("%d\n", ctx.streams[0]->codec->pix_fmt);
+    printf("%d\n", PIX_FMT_RGB32);
+    printf("%d\n", PIX_FMT_BGRA);
+    printf("%d\n", x11grab.image->bits_per_pixel / 8);
+*/
+    while (1) {
+        x11grab_read_packet(&ctx, &pkt);
+//        continue;
+        fwrite(x11grab.image->data,
+               x11grab.image->bits_per_pixel / 8,
+               x11grab.image->width * x11grab.image->height,
+               stdout);
+        }
+
+    x11grab_read_close(&ctx);
+    return 0;
+}
