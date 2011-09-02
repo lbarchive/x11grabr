@@ -2,14 +2,10 @@
  * Some portion of code was copied from libav.
  */
 
+#include "options.h"
 #include <stdint.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/XShm.h>
-
-typedef struct XGRational{
-    int num; ///< numerator
-    int den; ///< denominator
-} XGRational;
 
 /**
  * x11_grab stores everything
@@ -33,7 +29,8 @@ typedef struct x11_grab {
     int  draw_mouse;         /**< Set by a private option. */
     int  follow_mouse;       /**< Set by a private option. */
     int  show_region;        /**< set by a private option. */
-    char *framerate;         /**< Set by a private option. */
+    char *frame_rate;        /**< Set by a private option. */
+    XGRational framerate;
 
     Window region_win;       /**< This is used by show_region option. */
 } XG;

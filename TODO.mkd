@@ -9,7 +9,6 @@ Issues
 Basic
 -----
 
- * Options parsing.
  * Benchmarking - allows to use options for testing output FPS.
 
 Options

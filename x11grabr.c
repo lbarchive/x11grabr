@@ -49,6 +49,7 @@
 /**
  * Logging function
  */
+/* TODO use #define to extend for __FILE__, __LINE__ */
 static void
 xg_log(int level, const char *fmt, ...)
 {
@@ -66,15 +67,6 @@ int64_t xg_gettime(void)
     struct timeval tv;
     gettimeofday(&tv,NULL);
     return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
-}
-
-/**
- * Convert rational to double.
- * @param a rational to convert
- * @return (double) a
- */
-static inline double xg_q2d(XGRational a){
-    return a.num / (double) a.den;
 }
 
 #define REGION_WIN_BORDER 3
@@ -162,7 +154,6 @@ xg_init(XG *xg)
     int use_shm;
     char *param, *offset;
     int ret = 0;
-    XGRational framerate;
 
     param = strdup(xg->display);
     offset = strchr(param, '+');
@@ -172,22 +163,6 @@ xg_init(XG *xg)
         *offset= 0;
     }
 
-    xg->width  = 1280;
-    xg->height = 720;
-/*
-    if ((ret = av_parse_video_size(&xg->width, &xg->height, xg->video_size)) < 0) {
-        xg_log(XG_LOG_ERROR, "Couldn't parse video size.\n");
-        goto out;
-    }
-*/
-    framerate.num = 25;
-    framerate.den = 1;
-/*
-    if ((ret = av_parse_video_rate(&framerate, xg->framerate)) < 0) {
-        xg_log(XG_LOG_ERROR, "Could not parse framerate: %s.\n", xg->framerate);
-        goto out;
-    }
-*/
     xg_log(XG_LOG_INFO, "device: %s -> display: %s x: %d y: %d width: %d height: %d\n",
            xg->display, param, x_off, y_off, xg->width, xg->height);
 
@@ -256,7 +231,6 @@ xg_init(XG *xg)
 
     xg->frame_size = xg->width * xg->height * image->bits_per_pixel/8;
     xg->dpy = dpy;
-    xg->time_base  = (XGRational){framerate.den, framerate.num};
     xg->time_frame = xg_gettime() / xg_q2d(xg->time_base);
     xg->x_off = x_off;
     xg->y_off = y_off;
@@ -519,14 +493,37 @@ xg_read_close(XG *xg)
 
 int
 main(int argc, char **argv) {
+    struct arguments arguments;
     XG xg;
 
-    xg.display = strdup(":0.0");
-    xg.video_size = strdup("hd720");
-    xg.framerate  = strdup("25");
-    xg.follow_mouse = -1;
-    xg.show_region = 1;
-    xg.region_win = 0;
+    default_arguments(&arguments);
+    argp_parse(&argp, argc, argv, 0, 0, &arguments);
+
+    xg_log(XG_LOG_INFO, "DISPLAY: %s\n", arguments.display);
+    xg_log(XG_LOG_INFO, "VIDEO  : %s\n", arguments.video_size);
+    xg_log(XG_LOG_INFO, "SIZE   : %dx%d\n",
+           arguments.width, arguments.height);
+    xg_log(XG_LOG_INFO, "X, Y   : %d, %d\n",
+           arguments.x, arguments.y);
+    xg_log(XG_LOG_INFO, "FPS    : %s (%ld / %ld)\n",
+           arguments.frame_rate,
+           arguments.framerate.num, arguments.framerate.den);
+    xg_log(XG_LOG_INFO, "MOUSE  : %d\n", arguments.draw_mouse);
+    xg_log(XG_LOG_INFO, "FOLLOW : %d\n", arguments.follow_mouse);
+    xg_log(XG_LOG_INFO, "BORDER : %s (%d)\n",
+           xg_border_style_name(arguments.border_style),
+           arguments.border_style);
+
+    xg.display      = strdup(arguments.display);
+    xg.video_size   = strdup(arguments.video_size);
+    xg.width        = arguments.width;
+    xg.height       = arguments.height;
+    xg.frame_rate   = arguments.frame_rate;
+    xg.framerate    = arguments.framerate;
+    xg.time_base    = (XGRational){xg.framerate.den, xg.framerate.num};
+    xg.follow_mouse = arguments.follow_mouse;
+    xg.show_region  = arguments.border_style;
+    xg.region_win   = 0;
 
     xg_init(&xg);
 /*
