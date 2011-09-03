@@ -5,6 +5,7 @@ Issues
 ------
 
  * Audio could be out of sync.
+   * could be resolved by use libav/ffmpeg as library.
 
 Basic
 -----
@@ -17,7 +18,7 @@ Options
  * show_region border style and color.
  * no output pixel data. Just discard image data from X.
  * Pointer highlighter (off-screen rendering like mouse pointer drawing):
-   * Following - A simple circle below the pointer.
+   * [half done] Following - A simple circle below the pointer.
    * Clicks - Change colors to indicate mouse clicks.
      * Could indicate using region border, changing color maybe.
    * Modifier - Allows to render modifier in text.
@@ -49,6 +50,8 @@ Possibilities
      different extensions if they don't like the defaults.
  * allows to spawn libav/ffmpeg, so only type in one command
    * eg. ./x11grab -s hd720 -r 25 -- ~/test.mp4
+   * or just use libav/ffmpeg as library? That would have better performance
+     and it could resolve audio out of sync issue.
 
 Wish list
 ---------
