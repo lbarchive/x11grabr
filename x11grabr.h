@@ -4,6 +4,7 @@
 
 #include "options.h"
 #include <stdint.h>
+#include <cairo.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/XShm.h>
 
@@ -24,6 +25,8 @@ typedef struct x11_grab {
     char *display;           /* string of Display, e.g. :0.0 */
     Display *dpy;            /**< X11 display from which x11grab grabs frames */
     XImage *image;           /**< X11 image holding the grab */
+    cairo_surface_t *image_s;
+    cairo_t *cr;
     int use_shm;             /**< !0 when using XShm extension */
     XShmSegmentInfo shminfo; /**< When using XShm, keeps track of XShm infos */
     int  draw_mouse;         /**< Set by a private option. */

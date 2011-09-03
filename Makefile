@@ -1,5 +1,5 @@
-CFLAGS  += -g 
-LDFLAGS += -lX11 -lXext -lXfixes -lgmp
+CFLAGS  += -g $(shell pkg-config --cflags cairo) 
+LDFLAGS += -lX11 -lXext -lXfixes -lgmp $(shell pkg-config --libs cairo) 
 
 all: x11grabr
 

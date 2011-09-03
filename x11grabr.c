@@ -33,6 +33,7 @@
  */
 
 #include "x11grabr.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <time.h>
@@ -156,12 +157,6 @@ xg_init(XG *xg)
     int ret = 0;
 
     param = strdup(xg->display);
-    offset = strchr(param, '+');
-    if (offset) {
-        sscanf(offset, "%d,%d", &x_off, &y_off);
-        xg->draw_mouse = !strstr(offset, "nomouse");
-        *offset= 0;
-    }
 
     xg_log(XG_LOG_INFO, "device: %s -> display: %s x: %d y: %d width: %d height: %d\n",
            xg->display, param, x_off, y_off, xg->width, xg->height);
@@ -235,6 +230,14 @@ xg_init(XG *xg)
     xg->x_off = x_off;
     xg->y_off = y_off;
     xg->image = image;
+    xg->image_s = cairo_image_surface_create_for_data(
+                      image->data,
+                      CAIRO_FORMAT_ARGB32,
+                      xg->width,
+                      xg->height,
+                      cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32,
+                                                    xg->width));
+    xg->cr = cairo_create(xg->image_s);
     xg->use_shm = use_shm;
 
 out:
@@ -375,6 +378,10 @@ xg_read_packet(XG *s)
     int64_t curtime, delay;
     struct timespec ts;
 
+    int screen_w, screen_h;
+    int pointer_x, pointer_y, _;
+    Window w;
+
     /* Calculate the time of the next frame */
     s->time_frame += INT64_C(1000000);
 
@@ -395,14 +402,10 @@ xg_read_packet(XG *s)
 
     screen = DefaultScreen(dpy);
     root = RootWindow(dpy, screen);
+    XQueryPointer(dpy, root, &w, &w, &pointer_x, &pointer_y, &_, &_, &_);
     if (follow_mouse) {
-        int screen_w, screen_h;
-        int pointer_x, pointer_y, _;
-        Window w;
-
         screen_w = DisplayWidth(dpy, screen);
         screen_h = DisplayHeight(dpy, screen);
-        XQueryPointer(dpy, root, &w, &w, &pointer_x, &pointer_y, &_, &_, &_);
         if (follow_mouse == -1) {
             // follow the mouse, put it at center of grabbing region
             x_off += pointer_x - s->width  / 2 - x_off;
@@ -453,6 +456,15 @@ xg_read_packet(XG *s)
         }
     }
 
+    if (true) {
+        cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
+        cairo_arc (s->cr, pointer_x - s->x_off, pointer_y - s->y_off, 50, 0, 2*M_PI);
+        //cairo_arc (s->cr, (double) 1.0 * s->x_off, (double) 1.0 * s->y_off, 50, 0, 2*M_PI);
+        //fprintf(stderr, "%d, %d\n", s->x_off, s->y_off);
+        //fprintf(stderr, "%f, %f\n", (double) 1.0 * s->x_off, (double) 1.0 * s->y_off);
+        cairo_fill (s->cr);
+    }
+
     if (s->draw_mouse) {
         paint_mouse_pointer(image, s);
     }
@@ -474,6 +486,12 @@ xg_read_close(XG *xg)
         XShmDetach(xg->dpy, &xg->shminfo);
         shmdt(xg->shminfo.shmaddr);
         shmctl(xg->shminfo.shmid, IPC_RMID, NULL);
+    }
+
+    /* Destroy Cairo surface */
+    if (xg->image_s) {
+        cairo_destroy(xg->cr);
+        cairo_surface_destroy(xg->image_s);
     }
 
     /* Destroy X11 image */
@@ -521,6 +539,7 @@ main(int argc, char **argv) {
     xg.frame_rate   = arguments.frame_rate;
     xg.framerate    = arguments.framerate;
     xg.time_base    = (XGRational){xg.framerate.den, xg.framerate.num};
+    xg.draw_mouse   = arguments.draw_mouse;
     xg.follow_mouse = arguments.follow_mouse;
     xg.show_region  = arguments.border_style;
     xg.region_win   = 0;
