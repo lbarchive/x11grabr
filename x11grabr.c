@@ -33,9 +33,9 @@
  */
 
 #include "x11grabr.h"
+#include "record.h"
 #include <math.h>
 #include <stdio.h>
-#include <stdarg.h>
 #include <time.h>
 #include <X11/X.h>
 #include <X11/Xlib.h>
@@ -43,25 +43,12 @@
 #include <X11/Xproto.h>
 #include <X11/Xutil.h>
 #include <sys/shm.h>
+#include <X11/extensions/record.h>
 #include <X11/extensions/shape.h>
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/Xfixes.h>
 
-/**
- * Logging function
- */
-/* TODO use #define to extend for __FILE__, __LINE__ */
-static void
-xg_log(int level, const char *fmt, ...)
-{
-    va_list vl;
-
-    if(level>xg_log_level)
-        return;
-    va_start(vl, fmt);
-    vfprintf(stderr, fmt, vl);
-    va_end(vl);
-}
+XG xg;
 
 int64_t xg_gettime(void)
 {
@@ -379,7 +366,9 @@ xg_read_packet(XG *s)
     struct timespec ts;
 
     int screen_w, screen_h;
-    int pointer_x, pointer_y, _;
+    int pointer_x = s->pointer_x;
+    int pointer_y = s->pointer_y;
+    int _;
     Window w;
 
     /* Calculate the time of the next frame */
@@ -402,7 +391,8 @@ xg_read_packet(XG *s)
 
     screen = DefaultScreen(dpy);
     root = RootWindow(dpy, screen);
-    XQueryPointer(dpy, root, &w, &w, &pointer_x, &pointer_y, &_, &_, &_);
+    if (!s->record_ext)
+        XQueryPointer(dpy, root, &w, &w, &pointer_x, &pointer_y, &_, &_, &_);
     if (follow_mouse) {
         screen_w = DisplayWidth(dpy, screen);
         screen_h = DisplayHeight(dpy, screen);
@@ -457,11 +447,11 @@ xg_read_packet(XG *s)
     }
 
     if (true) {
-        cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
+        if (s->pointer_button)
+            cairo_set_source_rgba (s->cr, 1, 0, 0, 0.5);
+        else
+            cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
         cairo_arc (s->cr, pointer_x - s->x_off, pointer_y - s->y_off, 50, 0, 2*M_PI);
-        //cairo_arc (s->cr, (double) 1.0 * s->x_off, (double) 1.0 * s->y_off, 50, 0, 2*M_PI);
-        //fprintf(stderr, "%d, %d\n", s->x_off, s->y_off);
-        //fprintf(stderr, "%f, %f\n", (double) 1.0 * s->x_off, (double) 1.0 * s->y_off);
         cairo_fill (s->cr);
     }
 
@@ -512,7 +502,6 @@ xg_read_close(XG *xg)
 int
 main(int argc, char **argv) {
     struct arguments arguments;
-    XG xg;
 
     default_arguments(&arguments);
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -545,6 +534,8 @@ main(int argc, char **argv) {
     xg.region_win   = 0;
 
     xg_init(&xg);
+    xg.record_ext = xg_record_init(&xg);
+
 /*
     printf("%d\n", ctx.streams[0]->codec->pix_fmt);
     printf("%d\n", PIX_FMT_RGB32);
@@ -553,12 +544,17 @@ main(int argc, char **argv) {
 */
     while (1) {
         xg_read_packet(&xg);
+        if (xg.record_ext)
+            xg_record_process();
 //        continue;
         fwrite(xg.image->data,
                xg.image->bits_per_pixel / 8,
                xg.image->width * xg.image->height,
                stdout);
         }
+
+    if (xg.record_ext)
+        xg_record_close(&xg);
 
     xg_read_close(&xg);
     return 0;

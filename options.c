@@ -106,6 +106,7 @@ default_arguments(struct arguments *arguments)
     arguments->width        = 1280;
     arguments->height       = 720;
     arguments->frame_rate   = "25";
+    arguments->framerate    = (XGRational) { 25, 1 };
     arguments->draw_mouse   = true;
     arguments->follow_mouse = 100;
     arguments->border_style = XG_BORDER_DASHED;

@@ -2,6 +2,7 @@
  * Some portion of code was copied from libav.
  */
 
+#include "util.h"
 #include "options.h"
 #include <stdint.h>
 #include <cairo.h>
@@ -24,6 +25,10 @@ typedef struct x11_grab {
 
     char *display;           /* string of Display, e.g. :0.0 */
     Display *dpy;            /**< X11 display from which x11grab grabs frames */
+    bool record_ext;
+    unsigned char pointer_button; /* it's BYTE in Xproto.h */
+    int pointer_x;
+    int pointer_y;
     XImage *image;           /**< X11 image holding the grab */
     cairo_surface_t *image_s;
     cairo_t *cr;
@@ -43,25 +48,3 @@ typedef struct XGStream {
     XGRational time_base;
     int pts_wrap_bits; /**< number of bits in pts (used for wrapping control) */
 } XGStream;
-
-/**
- * Logging
- */
-#define XG_LOG_FATAL     8
-#define XG_LOG_ERROR    16
-#define XG_LOG_WARNING  24
-#define XG_LOG_INFO     32
-#define XG_LOG_VERBOSE  40
-#define XG_LOG_DEBUG    48
-static int xg_log_level = XG_LOG_INFO;
-
-#define XGMAX(a,b) ((a) > (b) ? (a) : (b))
-#define XGMIN(a,b) ((a) > (b) ? (b) : (a))
-
-/* error handling */
-#if EDOM > 0
-#define XGERROR(e) (-(e))   ///< Returns a negative error code from a POSIX error code, to return from library functions.
-#else
-/* Some platforms have E* and errno already negated. */
-#define XGERROR(e) (e)
-#endif
