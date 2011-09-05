@@ -39,6 +39,10 @@ parse_opt(int key, char *arg, struct argp_state *state)
                     arguments->height     = XG_VIDEO_SIZES[i].height;
                     return 0;
                 }
+            if (2 == sscanf(arg, "%dx%d", &arguments->width, &arguments->height)) {
+                arguments->video_size = arg;
+                return 0;
+            }
             return ARGP_ERR_UNKNOWN;
         case 'x':
             arguments->x = atoi(arg);
