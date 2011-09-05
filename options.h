@@ -15,6 +15,7 @@ static struct argp_option options[] = {
     { "nomouse",    'M',  0,          OPTION_ARG_OPTIONAL,  "Do not draw mouse pointer" },
     { "follow",     'f',  "center|PIXELS",
                                       OPTION_ARG_OPTIONAL,  "\nFollow mouse mode" },
+    { "nofollow",   'F',  0,          OPTION_ARG_OPTIONAL,  "Turn off follow mouse" },
     { "border",     'b',  "STYLE",    OPTION_ARG_OPTIONAL,  "Border style" },
 
     { "benchmark",  256,  0,          OPTION_ARG_OPTIONAL,  "Benchmarking" },

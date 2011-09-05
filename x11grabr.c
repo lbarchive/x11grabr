@@ -136,8 +136,8 @@ xg_init(XG *xg)
     Display *dpy;
     XGStream *st = NULL;
     XImage *image;
-    int x_off = 0;
-    int y_off = 0;
+    int x_off = xg->x_off;
+    int y_off = xg->y_off;
     int screen;
     int use_shm;
     char *param, *offset;
@@ -426,12 +426,72 @@ xg_read_packet(XG *s)
     }
 
     if (true) {
-        if (s->pointer_button)
-            cairo_set_source_rgba (s->cr, 1, 0, 0, 0.5);
-        else
-            cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
+        cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
         cairo_arc (s->cr, pointer_x - s->x_off, pointer_y - s->y_off, 50, 0, 2*M_PI);
         cairo_fill (s->cr);
+        if (s->pointer_button) {
+            double d;
+            double d_x = pointer_x - x_off;
+            double d_y = pointer_y - y_off;
+
+            d = sqrt(50 * 50 / 2);
+            cairo_move_to(s->cr, d_x, d_y);
+            cairo_set_source_rgba (s->cr, 1, 0, 0, 0.5);
+            switch (s->pointer_button) {
+                case 1: /* LEFT */
+                    cairo_line_to(s->cr, d_x - d, d_y + d);
+                    cairo_arc(s->cr,
+                              d_x,
+                              d_y,
+                              50,
+                              135 * (M_PI / 180.),
+                              225 * (M_PI / 180.));
+                    break;
+                case 2: /* MIDDLE */
+                    cairo_line_to(s->cr, d_x - d, d_y - d);
+                    cairo_arc(s->cr,
+                              d_x,
+                              d_y,
+                              50,
+                              225 * (M_PI / 180.),
+                              315 * (M_PI / 180.));
+                    break;
+                case 3: /* RIGHT */
+                    cairo_line_to(s->cr, d_x + d, d_y - d);
+                    cairo_arc(s->cr,
+                              d_x,
+                              d_y,
+                              50,
+                              315 * (M_PI / 180.),
+                              45  * (M_PI / 180.));
+                    break;
+                case 4: /* WHEEL UP */
+                    xg_log(XG_LOG_DEBUG, "4\n");
+                    cairo_set_source_rgba (s->cr, 0, 0, 1, 0.5);
+                    cairo_line_to(s->cr, d_x - d, d_y - d);
+                    cairo_arc(s->cr,
+                              d_x,
+                              d_y,
+                              50,
+                              225 * (M_PI / 180.),
+                              315 * (M_PI / 180.));
+                    break;
+                case 5: /* WHEEL DOWN */
+                    xg_log(XG_LOG_DEBUG, "5\n");
+                    cairo_set_source_rgba (s->cr, 0, 0, 1, 0.5);
+                    cairo_line_to(s->cr, d_x + d, d_y + d);
+                    cairo_arc(s->cr,
+                              d_x,
+                              d_y,
+                              50,
+                              45  * (M_PI / 180.),
+                              135 * (M_PI / 180.));
+                    break;
+                default:
+                    break;
+            }
+            cairo_fill (s->cr);
+        }
     }
 
     if (s->draw_mouse) {
@@ -507,6 +567,8 @@ main(int argc, char **argv) {
     xg.video_size   = strdup(arguments.video_size);
     xg.width        = arguments.width;
     xg.height       = arguments.height;
+    xg.x_off        = arguments.x;
+    xg.y_off        = arguments.y;
     xg.frame_rate   = arguments.frame_rate;
     xg.framerate    = arguments.framerate;
     xg.time_base    = (XGRational){xg.framerate.den, xg.framerate.num};
@@ -554,7 +616,7 @@ main(int argc, char **argv) {
 
         xg_read_packet(&xg);
         if (xg.record_ext)
-            xg_record_process();
+            xg_record_process(&xg);
 //        continue;
         fwrite(xg.image->data,
                xg.image->bits_per_pixel / 8,

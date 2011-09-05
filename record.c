@@ -12,6 +12,9 @@ typedef struct {
 
 XGRecord xgr;
 
+#define CLEAR_BUTTON_TIMER 100000
+time_t clear_button = 0;
+
 bool
 xg_record_init(XG *xg)
 {
@@ -74,9 +77,13 @@ xg_record_close(XG *xg)
 }
 
 void
-xg_record_process(void)
+xg_record_process(XG *xg)
 {
     XRecordProcessReplies(xgr.dpy_data);
+    if (clear_button && xg_gettime() >= clear_button) {
+        clear_button = 0;
+        xg->pointer_button = 0;
+    }
 }
 
 void
@@ -97,7 +104,13 @@ xg_record_callback(XPointer private, XRecordInterceptData *hook)
             xg->pointer_button = event->u.u.detail;
             break;
         case ButtonRelease:
-            xg->pointer_button = 0;
+            if (event->u.u.detail > 3)
+                /* Wheel release event comes right after press,
+                   Need to get it stuck for a while before resetting
+                   pointer_button */
+                clear_button = xg_gettime() + CLEAR_BUTTON_TIMER;
+            else
+                xg->pointer_button = 0;
             break;
         case MotionNotify:
             xg->pointer_x = event->u.keyButtonPointer.rootX;

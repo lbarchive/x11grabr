@@ -80,6 +80,9 @@ parse_opt(int key, char *arg, struct argp_state *state)
                                       ? -1
                                       : atoi(arg);
             break;
+        case 'F':
+            arguments->follow_mouse = 0;
+            break;
         case 'c':
             arguments->follow_mouse = -1;
             break;
