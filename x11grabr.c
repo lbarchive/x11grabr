@@ -362,32 +362,11 @@ xg_read_packet(XG *s)
     Window root;
     int follow_mouse = s->follow_mouse;
 
-    int64_t curtime, delay;
-    struct timespec ts;
-
     int screen_w, screen_h;
     int pointer_x = s->pointer_x;
     int pointer_y = s->pointer_y;
     int _;
     Window w;
-
-    /* Calculate the time of the next frame */
-    s->time_frame += INT64_C(1000000);
-
-    /* wait based on the frame rate */
-    for(;;) {
-        curtime = xg_gettime();
-        delay = s->time_frame * xg_q2d(s->time_base) - curtime;
-        if (delay <= 0) {
-            if (delay < INT64_C(-1000000) * xg_q2d(s->time_base)) {
-                s->time_frame += INT64_C(1000000);
-            }
-            break;
-        }
-        ts.tv_sec = delay / 1000000;
-        ts.tv_nsec = (delay % 1000000) * 1000;
-        nanosleep(&ts, NULL);
-    }
 
     screen = DefaultScreen(dpy);
     root = RootWindow(dpy, screen);
@@ -502,6 +481,9 @@ xg_read_close(XG *xg)
 int
 main(int argc, char **argv) {
     struct arguments arguments;
+    FILE *outfile = stdout;
+    time_t start_time;
+    int frame_count = 0;
 
     default_arguments(&arguments);
     argp_parse(&argp, argc, argv, 0, 0, &arguments);
@@ -542,7 +524,34 @@ main(int argc, char **argv) {
     printf("%d\n", PIX_FMT_BGRA);
     printf("%d\n", xg.image->bits_per_pixel / 8);
 */
+    if (arguments.benchmark) {
+        outfile = fopen("/dev/null", "w");
+        start_time = xg_gettime();
+    }
+        
     while (1) {
+        if (!arguments.benchmark) {
+            int64_t curtime, delay;
+            struct timespec ts;
+            /* Calculate the time of the next frame */
+            xg.time_frame += INT64_C(1000000);
+
+            /* wait based on the frame rate */
+            for(;;) {
+                curtime = xg_gettime();
+                delay = xg.time_frame * xg_q2d(xg.time_base) - curtime;
+                if (delay <= 0) {
+                    if (delay < INT64_C(-1000000) * xg_q2d(xg.time_base)) {
+                        xg.time_frame += INT64_C(1000000);
+                    }
+                    break;
+                }
+                ts.tv_sec = delay / 1000000;
+                ts.tv_nsec = (delay % 1000000) * 1000;
+                nanosleep(&ts, NULL);
+            }
+        }
+
         xg_read_packet(&xg);
         if (xg.record_ext)
             xg_record_process();
@@ -550,8 +559,18 @@ main(int argc, char **argv) {
         fwrite(xg.image->data,
                xg.image->bits_per_pixel / 8,
                xg.image->width * xg.image->height,
-               stdout);
+               outfile);
+
+        if (arguments.benchmark) {
+            frame_count++;
+            xg_log(XG_LOG_INFO, "\033[2K\033[0GFPS: %f FRAMES: %d",
+                   (float) frame_count / (xg_gettime() - start_time) * 1000000,
+                   frame_count);
         }
+    }
+
+    if (arguments.benchmark)
+        fclose(outfile);
 
     if (xg.record_ext)
         xg_record_close(&xg);

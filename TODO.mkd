@@ -10,7 +10,6 @@ Issues
 Basic
 -----
 
- * Benchmarking - allows to use options for testing output FPS.
 
 Options
 -------
@@ -18,7 +17,6 @@ Options
  * show_region border style and color.
  * no output pixel data. Just discard image data from X.
  * Pointer highlighter (off-screen rendering like mouse pointer drawing):
-   * [half done] Following - A simple circle below the pointer.
    * Clicks - Change colors to indicate mouse clicks.
      * Could indicate using region border, changing color maybe.
    * Modifier - Allows to render modifier in text.

@@ -16,6 +16,8 @@ static struct argp_option options[] = {
     { "follow",     'f',  "center|PIXELS",
                                       OPTION_ARG_OPTIONAL,  "\nFollow mouse mode" },
     { "border",     'b',  "STYLE",    OPTION_ARG_OPTIONAL,  "Border style" },
+
+    { "benchmark",  256,  0,          OPTION_ARG_OPTIONAL,  "Benchmarking" },
     { 0 }
 };
 
@@ -118,6 +120,8 @@ struct arguments {
     int   follow_mouse;
 
     enum XG_BORDER_STYLE border_style;
+
+    bool benchmark;
 };
 
 error_t parse_opt(int key, char *arg, struct argp_state *state);

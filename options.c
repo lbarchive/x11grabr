@@ -94,6 +94,9 @@ parse_opt(int key, char *arg, struct argp_state *state)
                     return 0;
                 }
             return ARGP_ERR_UNKNOWN;
+        case 256:
+            arguments->benchmark = true;
+            return 0;
         default:
             return ARGP_ERR_UNKNOWN;
         }
@@ -114,4 +117,6 @@ default_arguments(struct arguments *arguments)
     arguments->draw_mouse   = true;
     arguments->follow_mouse = 100;
     arguments->border_style = XG_BORDER_DASHED;
+
+    arguments->benchmark    = false;
 }
