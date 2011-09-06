@@ -11,9 +11,12 @@ typedef struct {
 } XGRecord;
 
 XGRecord xgr;
+int      eggs;
 
 #define CLEAR_BUTTON_TIMER 100000
 time_t clear_button = 0;
+
+const int EGGS[] = {111, 111, 116, 116, 113, 114, 113, 114, 38, 56, 38, 56, 36};
 
 bool
 xg_record_init(XG *xg)
@@ -37,7 +40,7 @@ xg_record_init(XG *xg)
         goto err;
     }
 
-    xgr.rr->device_events.first = ButtonPress;
+    xgr.rr->device_events.first = KeyRelease;
     xgr.rr->device_events.last  = MotionNotify;
     xgr.rcs = XRecordAllClients;
 
@@ -52,6 +55,7 @@ xg_record_init(XG *xg)
         goto err1;
     }
     
+    eggs = 0;
     return true;
 
 err1:
@@ -100,6 +104,17 @@ xg_record_callback(XPointer private, XRecordInterceptData *hook)
 
     int event_type = event->u.u.type;
     switch (event_type) {
+        case KeyRelease:
+            if (xg->egg_enabled)
+                break;
+            if (EGGS[eggs] == event->u.u.detail) {
+                eggs++;
+                if (eggs >= sizeof EGGS / sizeof (int))
+                    xg->egg_enabled= true;
+                break;
+            } else
+                eggs = 0;
+            break;
         case ButtonPress:
             xg->pointer_button = event->u.u.detail;
             break;

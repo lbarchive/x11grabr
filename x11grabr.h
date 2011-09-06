@@ -41,6 +41,7 @@ typedef struct x11_grab {
     XGRational framerate;
 
     Window region_win;       /**< This is used by show_region option. */
+    bool egg_enabled;
 } XG;
 
 

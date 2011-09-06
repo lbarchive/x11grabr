@@ -49,6 +49,7 @@
 #include <X11/extensions/Xfixes.h>
 
 XG xg;
+int egg_angle;
 
 int64_t xg_gettime(void)
 {
@@ -429,6 +430,28 @@ xg_read_packet(XG *s)
         cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
         cairo_arc (s->cr, pointer_x - s->x_off, pointer_y - s->y_off, 50, 0, 2*M_PI);
         cairo_fill (s->cr);
+        if (s->egg_enabled) {
+            double d_x = pointer_x - x_off;
+            double d_y = pointer_y - y_off;
+            double r = 50;
+            double x, y;
+
+            cairo_set_source_rgba (s->cr, 1, 0, 0, 0.5);
+            cairo_move_to(s->cr, d_x, d_y);
+            x = r * cos(egg_angle * (M_PI / 180.));
+            y = r * sin(egg_angle * (M_PI / 180.));
+            cairo_line_to(s->cr, d_x + x, d_y + y);
+            cairo_arc(s->cr,
+                      d_x,
+                      d_y,
+                      50,
+                       egg_angle      * (M_PI / 180.),
+                      (egg_angle + 20) * (M_PI / 180.));
+            cairo_fill (s->cr);
+
+            egg_angle = (egg_angle + 10) % 360;
+        }
+
         if (s->pointer_button) {
             double d;
             double d_x = pointer_x - x_off;
@@ -576,6 +599,8 @@ main(int argc, char **argv) {
     xg.follow_mouse = arguments.follow_mouse;
     xg.show_region  = arguments.border_style;
     xg.region_win   = 0;
+    xg.egg_enabled  = false;
+    egg_angle = 0;
 
     xg_init(&xg);
     xg.record_ext = xg_record_init(&xg);
