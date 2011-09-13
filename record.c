@@ -84,7 +84,7 @@ void
 xg_record_process(XG *xg)
 {
     XRecordProcessReplies(xgr.dpy_data);
-    if (clear_button && xg_gettime() >= clear_button) {
+    if (clear_button && av_gettime() >= clear_button) {
         clear_button = 0;
         xg->pointer_button = 0;
     }
@@ -123,7 +123,7 @@ xg_record_callback(XPointer private, XRecordInterceptData *hook)
                 /* Wheel release event comes right after press,
                    Need to get it stuck for a while before resetting
                    pointer_button */
-                clear_button = xg_gettime() + CLEAR_BUTTON_TIMER;
+                clear_button = av_gettime() + CLEAR_BUTTON_TIMER;
             else
                 xg->pointer_button = 0;
             break;

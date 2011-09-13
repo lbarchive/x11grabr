@@ -47,16 +47,11 @@
 #include <X11/extensions/shape.h>
 #include <X11/extensions/XShm.h>
 #include <X11/extensions/Xfixes.h>
+#include <libavformat/avformat.h>
+#include <libavutil/rational.h>
 
 XG xg;
 int egg_angle;
-
-int64_t xg_gettime(void)
-{
-    struct timeval tv;
-    gettimeofday(&tv,NULL);
-    return (int64_t)tv.tv_sec * 1000000 + tv.tv_usec;
-}
 
 #define REGION_WIN_BORDER 3
 /**
@@ -126,8 +121,8 @@ xg_region_win_init(XG *s)
  * @param s1 Context from avformat core
  * @param ap Parameters from avformat core
  * @return <ul>
- *          <li>XGERROR(ENOMEM) no memory left</li>
- *          <li>XGERROR(EIO) other failure case</li>
+ *          <li>AVERROR(ENOMEM) no memory left</li>
+ *          <li>AVERROR(EIO) other failure case</li>
  *          <li>0 success</li>
  *         </ul>
  */
@@ -135,7 +130,7 @@ static int
 xg_init(XG *xg)
 {
     Display *dpy;
-    XGStream *st = NULL;
+    AVStream *st = NULL;
     XImage *image;
     int x_off = xg->x_off;
     int y_off = xg->y_off;
@@ -152,11 +147,11 @@ xg_init(XG *xg)
     dpy = XOpenDisplay(param);
     if(!dpy) {
         xg_log(XG_LOG_ERROR, "Could not open X display.\n");
-        ret = XGERROR(EIO);
+        ret = AVERROR(EIO);
         goto out;
     }
 
-    st = malloc(sizeof (struct XGStream));
+    st = malloc(sizeof (struct AVStream));
     st->time_base.num = 1;
     st->time_base.den = 1000000;
     st->pts_wrap_bits = 64;
@@ -171,8 +166,8 @@ xg_init(XG *xg)
         XQueryPointer(dpy, RootWindow(dpy, screen), &w, &w, &x_off, &y_off, &ret, &ret, &ret);
         x_off -= xg->width / 2;
         y_off -= xg->height / 2;
-        x_off = XGMIN(XGMAX(x_off, 0), screen_w - xg->width);
-        y_off = XGMIN(XGMAX(y_off, 0), screen_h - xg->height);
+        x_off = FFMIN(FFMAX(x_off, 0), screen_w - xg->width);
+        y_off = FFMIN(FFMAX(y_off, 0), screen_h - xg->height);
         xg_log(XG_LOG_INFO, "followmouse is enabled, resetting grabbing region to x: %d y: %d\n", x_off, y_off);
     }
 
@@ -193,7 +188,7 @@ xg_init(XG *xg)
                                         IPC_CREAT|0777);
         if (xg->shminfo.shmid == -1) {
             xg_log(XG_LOG_ERROR, "Fatal: Can't get shared memory!\n");
-            ret = XGERROR(ENOMEM);
+            ret = AVERROR(ENOMEM);
             goto out;
         }
         xg->shminfo.shmaddr = image->data = shmat(xg->shminfo.shmid, 0, 0);
@@ -202,7 +197,7 @@ xg_init(XG *xg)
         if (!XShmAttach(dpy, &xg->shminfo)) {
             xg_log(XG_LOG_ERROR, "Fatal: Failed to attach shared memory!\n");
             /* needs some better error subroutine :) */
-            ret = XGERROR(EIO);
+            ret = AVERROR(EIO);
             goto out;
         }
     } else {
@@ -214,7 +209,7 @@ xg_init(XG *xg)
 
     xg->frame_size = xg->width * xg->height * image->bits_per_pixel/8;
     xg->dpy = dpy;
-    xg->time_frame = xg_gettime() / xg_q2d(xg->time_base);
+    xg->time_frame = av_gettime() / av_q2d(xg->time_base);
     xg->x_off = x_off;
     xg->y_off = y_off;
     xg->image = image;
@@ -267,11 +262,11 @@ paint_mouse_pointer(XImage *image, XG *s)
     x = xcim->x - xcim->xhot;
     y = xcim->y - xcim->yhot;
 
-    to_line = XGMIN((y + xcim->height), (height + y_off));
-    to_column = XGMIN((x + xcim->width), (width + x_off));
+    to_line = FFMIN((y + xcim->height), (height + y_off));
+    to_column = FFMIN((x + xcim->width), (width + x_off));
 
-    for (line = XGMAX(y, y_off); line < to_line; line++) {
-        for (column = XGMAX(x, x_off); column < to_column; column++) {
+    for (line = FFMAX(y, y_off); line < to_line; line++) {
+        for (column = FFMAX(x, x_off); column < to_column; column++) {
             int  xcim_addr = (line - y) * xcim->width + column - x;
             int image_addr = ((line - y_off) * width + column - x_off) * pixstride;
             int r = (uint8_t)(xcim->pixels[xcim_addr] >>  0);
@@ -393,8 +388,8 @@ xg_read_packet(XG *s)
                 y_off -= (y_off + follow_mouse) - pointer_y;
         }
         // adjust grabbing region position if it goes out of screen.
-        s->x_off = x_off = XGMIN(XGMAX(x_off, 0), screen_w - s->width);
-        s->y_off = y_off = XGMIN(XGMAX(y_off, 0), screen_h - s->height);
+        s->x_off = x_off = FFMIN(FFMAX(x_off, 0), screen_w - s->width);
+        s->y_off = y_off = FFMIN(FFMAX(y_off, 0), screen_h - s->height);
 
         if (s->show_region && s->region_win) {
             XMoveWindow(dpy, s->region_win,
@@ -594,7 +589,7 @@ main(int argc, char **argv) {
     xg.y_off        = arguments.y;
     xg.frame_rate   = arguments.frame_rate;
     xg.framerate    = arguments.framerate;
-    xg.time_base    = (XGRational){xg.framerate.den, xg.framerate.num};
+    xg.time_base    = (AVRational){xg.framerate.den, xg.framerate.num};
     xg.draw_mouse   = arguments.draw_mouse;
     xg.follow_mouse = arguments.follow_mouse;
     xg.show_region  = arguments.border_style;
@@ -613,7 +608,7 @@ main(int argc, char **argv) {
 */
     if (arguments.benchmark) {
         outfile = fopen("/dev/null", "w");
-        start_time = xg_gettime();
+        start_time = av_gettime();
     }
         
     while (1) {
@@ -625,10 +620,10 @@ main(int argc, char **argv) {
 
             /* wait based on the frame rate */
             for(;;) {
-                curtime = xg_gettime();
-                delay = xg.time_frame * xg_q2d(xg.time_base) - curtime;
+                curtime = av_gettime();
+                delay = xg.time_frame * av_q2d(xg.time_base) - curtime;
                 if (delay <= 0) {
-                    if (delay < INT64_C(-1000000) * xg_q2d(xg.time_base)) {
+                    if (delay < INT64_C(-1000000) * av_q2d(xg.time_base)) {
                         xg.time_frame += INT64_C(1000000);
                     }
                     break;
@@ -651,7 +646,7 @@ main(int argc, char **argv) {
         if (arguments.benchmark) {
             frame_count++;
             xg_log(XG_LOG_INFO, "\033[2K\033[0GFPS: %f FRAMES: %d",
-                   (float) frame_count / (xg_gettime() - start_time) * 1000000,
+                   (float) frame_count / (av_gettime() - start_time) * 1000000,
                    frame_count);
         }
     }

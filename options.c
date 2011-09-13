@@ -3,15 +3,16 @@
  */
 
 #include "options.h"
-#include <gmp.h>
 #include <stdlib.h>
+#include <libavutil/common.h>
+#include <libavutil/parseutils.h>
 
 const char *
 xg_border_style_name(int id)
 {
     int i;
 
-    for (i=0; i<XG_ARRAY_ELEMS(XG_BORDER_STYLES); i++)
+    for (i=0; i<FF_ARRAY_ELEMS(XG_BORDER_STYLES); i++)
         if (XG_BORDER_STYLES[i].id == id)
             return XG_BORDER_STYLES[i].name;
     return NULL;
@@ -21,29 +22,17 @@ error_t
 parse_opt(int key, char *arg, struct argp_state *state)
 {
     struct arguments *arguments = state->input;
-    int i, n;
-    XGRational *rate;
-    double d;
-    mpq_t q;
-    mpz_t z;
+    int i;
 
     switch (key) {
         case 'i':
             arguments->display = arg;
             break;
         case 's':
-            for (i=0; i<XG_ARRAY_ELEMS(XG_VIDEO_SIZES); i++)
-                if (strcasecmp(XG_VIDEO_SIZES[i].name, arg) == 0) {
-                    arguments->video_size = arg;
-                    arguments->width      = XG_VIDEO_SIZES[i].width;
-                    arguments->height     = XG_VIDEO_SIZES[i].height;
-                    return 0;
-                }
-            if (2 == sscanf(arg, "%dx%d", &arguments->width, &arguments->height)) {
-                arguments->video_size = arg;
-                return 0;
-            }
-            return ARGP_ERR_UNKNOWN;
+            if (av_parse_video_size(&arguments->width, &arguments->height, arg) < 0)
+                return ARGP_ERR_UNKNOWN;
+            arguments->video_size = arg;
+            return 0;
         case 'x':
             arguments->x = atoi(arg);
             break;
@@ -51,27 +40,10 @@ parse_opt(int key, char *arg, struct argp_state *state)
             arguments->y = atoi(arg);
             break;
         case 'r':
-            n = XG_ARRAY_ELEMS(XG_VIDEO_RATES);
-            rate = &arguments->framerate;
-
-            /* First, we check our abbreviation table */
-            for (i = 0; i < n; ++i)
-                if (!strcmp(XG_VIDEO_RATES[i].name, arg)) {
-                    arguments->frame_rate = arg;
-                    *rate = XG_VIDEO_RATES[i].rate;
-                    return 0;
-                }
-
-            d = atof(arg);
-            mpq_init(q);
-            mpz_init(z);
-            mpq_set_d(q, d);
-            mpq_get_num(z, q);
-            rate->num = mpz_get_si(z);
-            mpq_get_den(z, q);
-            rate->den = mpz_get_si(z);
+            if (av_parse_video_rate(&arguments->framerate, arg) < 0)
+                return ARGP_ERR_UNKNOWN;
             arguments->frame_rate = arg;
-            break;
+            return 0;
         case 'M':
             arguments->draw_mouse = false;
             break;
@@ -91,7 +63,7 @@ parse_opt(int key, char *arg, struct argp_state *state)
                 arguments->border_style = XG_BORDER_DEFAULT;
                 return 0;
             }
-            for (i=0; i<XG_ARRAY_ELEMS(XG_BORDER_STYLES); i++)
+            for (i=0; i<FF_ARRAY_ELEMS(XG_BORDER_STYLES); i++)
                 if (strcasecmp(XG_BORDER_STYLES[i].name, arg) == 0) {
                     arguments->border_style = XG_BORDER_STYLES[i].id;
                     return 0;
@@ -116,7 +88,7 @@ default_arguments(struct arguments *arguments)
     arguments->width        = 1280;
     arguments->height       = 720;
     arguments->frame_rate   = "25";
-    arguments->framerate    = (XGRational) { 25, 1 };
+    arguments->framerate    = (AVRational) { 25, 1 };
     arguments->draw_mouse   = true;
     arguments->follow_mouse = 100;
     arguments->border_style = XG_BORDER_DASHED;

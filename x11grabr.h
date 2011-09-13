@@ -8,13 +8,14 @@
 #include <cairo.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/XShm.h>
+#include <libavutil/rational.h>
 
 /**
  * x11_grab stores everything
  */
 typedef struct x11_grab {
     int frame_size;          /**< Size in bytes of a grabbed frame */
-    XGRational time_base;    /**< Time base */
+    AVRational time_base;    /**< Time base */
     int64_t time_frame;      /**< Current time */
 
     char *video_size;        /**< String describing video size, set by a private option. */
@@ -38,14 +39,8 @@ typedef struct x11_grab {
     int  follow_mouse;       /**< Set by a private option. */
     int  show_region;        /**< set by a private option. */
     char *frame_rate;        /**< Set by a private option. */
-    XGRational framerate;
+    AVRational framerate;
 
     Window region_win;       /**< This is used by show_region option. */
     bool egg_enabled;
 } XG;
-
-
-typedef struct XGStream {
-    XGRational time_base;
-    int pts_wrap_bits; /**< number of bits in pts (used for wrapping control) */
-} XGStream;
