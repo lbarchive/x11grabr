@@ -36,6 +36,8 @@ typedef struct x11_grab {
     int use_shm;             /**< !0 when using XShm extension */
     XShmSegmentInfo shminfo; /**< When using XShm, keeps track of XShm infos */
     int  draw_mouse;         /**< Set by a private option. */
+    int  draw_mouse_highlight;
+                             /**< Set by a private option. */
     int  follow_mouse;       /**< Set by a private option. */
     int  show_region;        /**< set by a private option. */
     char *frame_rate;        /**< Set by a private option. */

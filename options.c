@@ -47,6 +47,9 @@ parse_opt(int key, char *arg, struct argp_state *state)
         case 'M':
             arguments->draw_mouse = false;
             break;
+        case 'm':
+            arguments->draw_mouse_highlight = false;
+            break;
         case 'f':
             arguments->follow_mouse = (!arg || strcasecmp("center", arg) == 0)
                                       ? -1
@@ -90,6 +93,8 @@ default_arguments(struct arguments *arguments)
     arguments->frame_rate   = "25";
     arguments->framerate    = (AVRational) { 25, 1 };
     arguments->draw_mouse   = true;
+    arguments->draw_mouse_highlight
+                            = true;
     arguments->follow_mouse = 100;
     arguments->border_style = XG_BORDER_DASHED;
 

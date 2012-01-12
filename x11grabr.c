@@ -421,7 +421,7 @@ xg_read_packet(XG *s)
         }
     }
 
-    if (true) {
+    if (s->draw_mouse_highlight) {
         cairo_set_source_rgba (s->cr, 1, 1, 0, 0.5);
         cairo_arc (s->cr, pointer_x - s->x_off, pointer_y - s->y_off, 50, 0, 2*M_PI);
         cairo_fill (s->cr);
@@ -576,6 +576,7 @@ main(int argc, char **argv) {
            arguments.frame_rate,
            arguments.framerate.num, arguments.framerate.den);
     xg_log(XG_LOG_INFO, "MOUSE  : %d\n", arguments.draw_mouse);
+    xg_log(XG_LOG_INFO, "MOUSEHL: %d\n", arguments.draw_mouse_highlight);
     xg_log(XG_LOG_INFO, "FOLLOW : %d\n", arguments.follow_mouse);
     xg_log(XG_LOG_INFO, "BORDER : %s (%d)\n",
            xg_border_style_name(arguments.border_style),
@@ -591,6 +592,8 @@ main(int argc, char **argv) {
     xg.framerate    = arguments.framerate;
     xg.time_base    = (AVRational){xg.framerate.den, xg.framerate.num};
     xg.draw_mouse   = arguments.draw_mouse;
+    xg.draw_mouse_highlight
+                    = arguments.draw_mouse_highlight;
     xg.follow_mouse = arguments.follow_mouse;
     xg.show_region  = arguments.border_style;
     xg.region_win   = 0;

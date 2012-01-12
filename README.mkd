@@ -10,37 +10,9 @@ Current Status
 
 In this very first stage, x11grabr tries to do the same as it is in libav.
 
-Currently, x11grabr requires [GMP][] and a few X libraries to build. Simply run `make` should do the trick, then you should be able to run a comannd as follows:
+Currently, x11grabr requires [libav][] and a few X libraries to build. Simply run `make` should do the trick, then you should be able to run a comannd as follows:
 
     ./x11grabr -s hd720 -r 25 -b | ffmpeg -f rawvideo -pix_fmt bgra -s hd720 -r 25 -i - test.mp4
-
-[GMP]: http://gmplib.org/
-
-### Help and usage
-
-    $ ./x11grabr --help
-    Usage: x11grabr [OPTION...]
-
-      -b, --border[=STYLE]       Border style
-      -f, --follow[=center|PIXELS]   
-                                 Follow mouse mode
-      -i, --display=DISPLAY      Display
-      -M, --nomouse              Do not draw mouse pointer
-      -r, --framerate=FPS        Frame per second
-      -s, --size=SIZE            Video size
-      -x X                       X
-      -y Y                       Y
-      -?, --help                 Give this help list
-          --usage                Give a short usage message
-
-    Mandatory or optional arguments to long options are also mandatory or optional
-    for any corresponding short options.
-
-    $ ./x11grabr --usage
-    Usage: x11grabr [-M?] [-b[STYLE]] [-f[center|PIXELS]] [-i DISPLAY] [-r FPS]
-                [-s SIZE] [-x X] [-y Y] [--border[=STYLE]]
-                [--follow[=center|PIXELS]] [--display=DISPLAY] [--nomouse]
-                [--framerate=FPS] [--size=SIZE] [--help] [--usage]
 
 Development
 -----------

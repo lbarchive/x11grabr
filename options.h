@@ -14,6 +14,8 @@ static struct argp_option options[] = {
     { 0,            'y',  "Y",        0,                    "Y" },
     { "framerate",  'r',  "FPS",      0,                    "Frame per second" },
     { "nomouse",    'M',  0,          OPTION_ARG_OPTIONAL,  "Do not draw mouse pointer" },
+    { "nomousehighlight",
+                    'm',  0,          OPTION_ARG_OPTIONAL,  "Do not draw mouse pointer highlight" },
     { "follow",     'f',  "center|PIXELS",
                                       OPTION_ARG_OPTIONAL,  "\nFollow mouse mode" },
     { "nofollow",   'F',  0,          OPTION_ARG_OPTIONAL,  "Turn off follow mouse" },
@@ -50,6 +52,7 @@ struct arguments {
     char *frame_rate;
     AVRational framerate;
     bool  draw_mouse;
+    bool  draw_mouse_highlight;
     /**
      * == false
      *  0 - Do not follow
